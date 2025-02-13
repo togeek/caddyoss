@@ -90,29 +90,33 @@ func (m *Middleware) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
 	//d.Next()
 	//m.Param2 = d.Val()
 
-	for d.Next() {
-		for d.NextBlock(0) {
-			switch d.Val() {
-			case "param1":
-				if !d.NextArg() {
-					return d.ArgErr()
-				}
-				m.Param1 = d.Val()
-			case "param2":
-				if !d.NextArg() {
-					return d.ArgErr()
-				}
-				m.Param2 = d.Val()
-			case "param3":
-				if !d.NextArg() {
-					return d.ArgErr()
-				}
-				m.Param3 = d.Val()
-			default:
-				return d.Errf("unknown directive: %s", d.Val())
+	for nesting := d.Nesting(); d.NextBlock(nesting); {
+		switch d.Val() {
+		case "param1":
+			if !d.NextArg() {
+				return d.ArgErr()
 			}
+			m.Param1 = d.Val()
+		case "param2":
+			if !d.NextArg() {
+				return d.ArgErr()
+			}
+			m.Param2 = d.Val()
+		case "param3":
+			if !d.NextArg() {
+				return d.ArgErr()
+			}
+			m.Param3 = d.Val()
+		case "output":
+			if !d.NextArg() {
+				return d.ArgErr()
+			}
+			m.Output = d.Val()
+		default:
+			return d.Errf("unknown directive: %s", d.Val())
 		}
 	}
+
 	return nil
 }
 

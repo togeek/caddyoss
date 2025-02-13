@@ -13,7 +13,7 @@ import (
 
 func init() {
 	caddy.RegisterModule(Middleware{})
-	httpcaddyfile.RegisterHandlerDirective("oss", parseCaddyfile)
+	httpcaddyfile.RegisterHandlerDirective("oss_sign", parseCaddyfile)
 }
 
 // Middleware implements an HTTP handler that writes the
@@ -21,7 +21,7 @@ func init() {
 type Middleware struct {
 	// The file or stream to write to. Can be "stdout"
 	// or "stderr".
-	Output string `json:"stdout,omitempty"`
+	Output string `json:"output,omitempty"`
 	Param3 string `json:"param3,omitempty"`
 	Param1 string `json:"param1,omitempty"`
 	Param2 string `json:"param2,omitempty"`
@@ -31,7 +31,7 @@ type Middleware struct {
 // CaddyModule returns the Caddy module information.
 func (Middleware) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
-		ID:  "http.handlers.oss",
+		ID:  "http.handlers.oss_sign",
 		New: func() caddy.Module { return new(Middleware) },
 	}
 }
@@ -91,6 +91,7 @@ func (m *Middleware) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
 	//m.Param2 = d.Val()
 
 	for nesting := d.Nesting(); d.NextBlock(nesting); {
+		fmt.Println(d.Val())
 		switch d.Val() {
 		case "param1":
 			if !d.NextArg() {

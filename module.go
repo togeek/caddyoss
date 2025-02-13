@@ -96,6 +96,7 @@ func (m *Middleware) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
 		if !d.Args(&m.Param1, &m.Param2, &m.Param3) {
 			return d.ArgErr() // 返回参数错误
 		}
+		m.Param2 = d.Val()
 
 		// 转换参数类型 (如果需要)
 		// 例如，假设 Param2 是一个整数：
@@ -109,9 +110,9 @@ func (m *Middleware) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
 		// }
 
 		// 可以选择性地检查是否有剩余的参数（如果指令只能接受特定数量的参数）
-		if d.NextArg() {
-			return d.ArgErr() // 返回额外的参数错误
-		}
+		//if d.NextArg() {
+		//	return d.ArgErr() // 返回额外的参数错误
+		//}
 
 		return nil // 解析成功
 	}

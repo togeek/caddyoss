@@ -14,7 +14,7 @@ import (
 
 func init() {
 	caddy.RegisterModule(Middleware{})
-	httpcaddyfile.RegisterHandlerDirective("visitor_ip", parseCaddyfile)
+	httpcaddyfile.RegisterHandlerDirective("oss", parseCaddyfile)
 }
 
 // Middleware implements an HTTP handler that writes the
@@ -24,13 +24,15 @@ type Middleware struct {
 	// or "stderr".
 	Output string `json:"output,omitempty"`
 
-	w io.Writer
+	Param1 string `json:"Param1,omitempty"`
+	Param2 string `json:"Param2,omitempty"`
+	w      io.Writer
 }
 
 // CaddyModule returns the Caddy module information.
 func (Middleware) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
-		ID:  "http.handlers.visitor_ip",
+		ID:  "http.handlers.oss",
 		New: func() caddy.Module { return new(Middleware) },
 	}
 }
@@ -61,7 +63,9 @@ func (m Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddy
 	_, _ = m.w.Write([]byte(r.RemoteAddr + "\n"))
 
 	//fmt.Println(r.Host)
-	fmt.Println(r.URL)
+	fmt.Println(m.Output)
+	fmt.Println(m.Param1)
+	fmt.Println(m.Param2)
 
 	_, _ = m.w.Write([]byte(r.URL.Host + "\n"))
 

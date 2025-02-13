@@ -2,14 +2,13 @@ package visitorip
 
 import (
 	"fmt"
-	"io"
-	"net/http"
-	"os"
-
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/caddyconfig/caddyfile"
 	"github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile"
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
+	"io"
+	"net/http"
+	"os"
 )
 
 func init() {
@@ -22,10 +21,10 @@ func init() {
 type Middleware struct {
 	// The file or stream to write to. Can be "stdout"
 	// or "stderr".
-	Output string `json:"output,omitempty"`
-
-	Param1 string `json:"Param1,omitempty"`
-	Param2 string `json:"Param2,omitempty"`
+	Output string `json:"stdout,omitempty"`
+	Param3 string `json:"param3,omitempty"`
+	Param1 string `json:"param1,omitempty"`
+	Param2 string `json:"param2,omitempty"`
 	w      io.Writer
 }
 
@@ -66,6 +65,7 @@ func (m Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddy
 	fmt.Println(m.Output)
 	fmt.Println(m.Param1)
 	fmt.Println(m.Param2)
+	fmt.Println(m.Param3)
 
 	_, _ = m.w.Write([]byte(r.URL.Host + "\n"))
 
@@ -74,17 +74,45 @@ func (m Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddy
 
 // UnmarshalCaddyfile implements caddyfile.Unmarshaler.
 func (m *Middleware) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
-	d.Next() // consume directive name
+	//d.Next() // consume directive name
 
 	// require an argument
-	if !d.NextArg() {
-		return d.ArgErr()
+	//if !d.NextArg() {
+	//	return d.ArgErr()
+	//}
+
+	//fmt.Println(d.Val())
+	//
+	//// store the argument
+	//m.Output = d.Val()
+	//d.Next()
+	//m.Param1 = d.Val()
+	//d.Next()
+	//m.Param2 = d.Val()
+
+	for d.Next() {
+		for d.NextBlock(0) {
+			switch d.Val() {
+			case "param1":
+				if !d.NextArg() {
+					return d.ArgErr()
+				}
+				m.Param1 = d.Val()
+			case "param2":
+				if !d.NextArg() {
+					return d.ArgErr()
+				}
+				m.Param2 = d.Val()
+			case "param3":
+				if !d.NextArg() {
+					return d.ArgErr()
+				}
+				m.Param3 = d.Val()
+			default:
+				return d.Errf("unknown directive: %s", d.Val())
+			}
+		}
 	}
-
-	fmt.Println(d.Val())
-
-	// store the argument
-	m.Output = d.Val()
 	return nil
 }
 

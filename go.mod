@@ -2,7 +2,11 @@ module github.com/togeek/caddyoss
 
 go 1.23.4
 
-require github.com/caddyserver/caddy/v2 v2.9.1
+require (
+	github.com/aliyun/aliyun-oss-go-sdk v3.0.2+incompatible
+	github.com/caddyserver/caddy/v2 v2.9.1
+	go.uber.org/zap v1.27.0
+)
 
 require (
 	dario.cat/mergo v1.0.1 // indirect
@@ -93,7 +97,6 @@ require (
 	go.uber.org/automaxprocs v1.6.0 // indirect
 	go.uber.org/mock v0.4.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	go.uber.org/zap v1.27.0 // indirect
 	go.uber.org/zap/exp v0.3.0 // indirect
 	golang.org/x/crypto v0.31.0 // indirect
 	golang.org/x/crypto/x509roots/fallback v0.0.0-20241104001025-71ed71b4faf9 // indirect

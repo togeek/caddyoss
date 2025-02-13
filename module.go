@@ -61,9 +61,9 @@ func (m *Middleware) Provision(ctx caddy.Context) error {
 
 // Validate implements caddy.Validator.
 func (m *Middleware) Validate() error {
-	if m.w == nil {
-		return fmt.Errorf("no writer")
-	}
+	//if m.w == nil {
+	//	return fmt.Errorf("no writer")
+	//}
 	return nil
 }
 

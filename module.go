@@ -22,7 +22,7 @@ type Middleware struct {
 	// The file or stream to write to. Can be "stdout"
 	// or "stderr".
 	//Output string `json:"output,omitempty"`
-	Options map[string]interface{} `json:"options,omitempty"`
+	Options map[string]string `json:"options,omitempty"`
 
 	w io.Writer
 }
@@ -63,13 +63,7 @@ func (m *Middleware) Provision(ctx caddy.Context) error {
 //	}
 func (m *Middleware) Validate() error {
 	for k, v := range m.Options {
-		switch v.(type) {
-		case string, int, bool, float64: // 允许的类型
-			// 可以根据 key 做更细致的验证
-			fmt.Printf("Option %s: %v\n", k, v)
-		default:
-			return fmt.Errorf("option %s has invalid type: %T", k, v)
-		}
+		fmt.Printf("Option %s: %v\n", k, v)
 	}
 	return nil
 }
@@ -78,17 +72,23 @@ func (m *Middleware) Validate() error {
 func (m Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
 	_, _ = m.w.Write([]byte(r.RemoteAddr + "\n"))
 
-	if param1, ok := m.Options["param1"].(string); ok {
+	if param1, ok := m.Options["param1"]; ok {
 		fmt.Println("param1:", param1)
 	} else {
 		fmt.Println("param1 not found or not a string")
 	}
 
-	if param1, ok := m.Options["param1"].([]string); ok {
-		fmt.Println("param1:", param1)
+	if param2, ok := m.Options["param2"]; ok {
+		fmt.Println("param2:", param2)
 	} else {
-		fmt.Println("param1 not found or not a []string")
+		fmt.Println("param2 not found or not a string")
 	}
+
+	//if param1, ok := m.Options["param1"].([]string); ok {
+	//	fmt.Println("param1:", param1)
+	//} else {
+	//	fmt.Println("param1 not found or not a []string")
+	//}
 
 	_, _ = m.w.Write([]byte(r.RemoteAddr + "\n"))
 
@@ -112,17 +112,17 @@ func (m Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddy
 //		return nil
 //	}
 func (m *Middleware) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
-	m.Options = make(map[string]interface{})
+	m.Options = make(map[string]string)
 
 	for nesting := d.Nesting(); d.NextBlock(nesting); {
 		switch d.Val() {
 		case "param1":
-			m.Options["param1"] = d.RemainingArgs()
-			fmt.Println("param1")
-
+			m.Options["param1"] = d.RemainingArgs()[0]
+			d.NextArg()
+		case "param2":
+			d.NextArg()
+			m.Options["param2"] = d.RemainingArgs()[0]
 		default:
-			m.Options["param1"] = "sssss"
-			fmt.Println("ssdddwsd3232")
 			return d.Errf("unrecognized subdirective '%s'", d.Val())
 
 		}

@@ -63,7 +63,7 @@ func (m Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddy
 	//fmt.Println(r.Host)
 	fmt.Println(r.URL)
 
-	_, _ = m.w.Write([]byte(r.URL.Host + "\n"))
+	_, _ = m.w.Write([]byte(r.RemoteAddr + "\n"))
 
 	return next.ServeHTTP(w, r)
 }

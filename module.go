@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/caddyconfig/caddyfile"
@@ -22,7 +23,8 @@ func init() {
 type Middleware struct {
 	// The file or stream to write to. Can be "stdout"
 	// or "stderr".
-	Output string `json:"output,omitempty"`
+	//Output string `json:"output,omitempty"`
+	Options map[string]interface{} `json:"options,omitempty"`
 
 	w io.Writer
 }
@@ -48,16 +50,29 @@ func (m *Middleware) Provision(ctx caddy.Context) error {
 
 	m.w = os.Stdout
 
-	fmt.Println("visitor_ip middleware loaded")
-	fmt.Println(m.Output)
+	//fmt.Println("visitor_ip middleware loaded")
+	//fmt.Println(m.Output)
 	return nil
 }
 
 // Validate implements caddy.Validator.
+//
+//	func (m *Middleware) Validate() error {
+//		//if m.w == nil {
+//		//	return fmt.Errorf("no writer")
+//		//}
+//		return nil
+//	}
 func (m *Middleware) Validate() error {
-	//if m.w == nil {
-	//	return fmt.Errorf("no writer")
-	//}
+	for k, v := range m.Options {
+		switch v.(type) {
+		case string, int, bool, float64: // 允许的类型
+			// 可以根据 key 做更细致的验证
+			fmt.Printf("Option %s: %v\n", k, v)
+		default:
+			return fmt.Errorf("option %s has invalid type: %T", k, v)
+		}
+	}
 	return nil
 }
 
@@ -66,7 +81,7 @@ func (m Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddy
 	_, _ = m.w.Write([]byte(r.RemoteAddr + "\n"))
 
 	//fmt.Println(r.Host)
-	fmt.Println(m.Output)
+	fmt.Println(m.Options["param1"])
 
 	_, _ = m.w.Write([]byte(r.RemoteAddr + "\n"))
 
@@ -74,18 +89,61 @@ func (m Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddy
 }
 
 // UnmarshalCaddyfile implements caddyfile.Unmarshaler.
+//
+//	func (m *Middleware) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
+//		d.Next() // consume directive name
+//
+//		// require an argument
+//		if !d.NextArg() {
+//			return d.ArgErr()
+//		}
+//
+//		fmt.Println(d.Val())
+//
+//		// store the argument
+//		m.Output = d.Val()
+//		return nil
+//	}
 func (m *Middleware) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
-	d.Next() // consume directive name
+	m.Options = make(map[string]interface{})
 
-	// require an argument
-	if !d.NextArg() {
-		return d.ArgErr()
+	for d.Next() {
+		//if !d.Args(&m.Name) {
+		//	return d.ArgErr()
+		//}
+
+		// Expect an opening curly brace
+		if !d.NextBlock(0) {
+			return d.ArgErr()
+		}
+
+		// Parse key-value pairs inside the curly braces
+		for d.Next() {
+			if d.NextArg() {
+				key := d.Val()
+				if !d.NextArg() {
+					return d.ArgErr()
+				}
+				valueStr := d.Val()
+
+				// Attempt to parse the value as an int, float, or bool
+				if intVal, err := strconv.Atoi(valueStr); err == nil {
+					m.Options[key] = intVal
+				} else if floatVal, err := strconv.ParseFloat(valueStr, 64); err == nil {
+					m.Options[key] = floatVal
+				} else if boolVal, err := strconv.ParseBool(valueStr); err == nil {
+					m.Options[key] = boolVal
+				} else {
+					m.Options[key] = valueStr // Treat as string if parsing fails
+				}
+			}
+
+			if !d.NextLine() {
+				break
+			}
+		}
+		return nil
 	}
-
-	fmt.Println(d.Val())
-
-	// store the argument
-	m.Output = d.Val()
 	return nil
 }
 

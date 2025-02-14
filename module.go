@@ -13,7 +13,7 @@ import (
 
 func init() {
 	caddy.RegisterModule(Middleware{})
-	httpcaddyfile.RegisterHandlerDirective("visitor_ip", parseCaddyfile)
+	//httpcaddyfile.RegisterHandlerDirective("visitor_ip", parseCaddyfile)
 }
 
 // Middleware implements an HTTP handler that writes the
@@ -22,9 +22,11 @@ type Middleware struct {
 	// The file or stream to write to. Can be "stdout"
 	// or "stderr".
 	//Output string `json:"output,omitempty"`
-	Options map[string]string `json:"options,omitempty"`
+	//Options map[string]string `json:"options,omitempty"`
 
-	w io.Writer
+	Param1 string `json:"Param1,omitempty"`
+	Param2 string `json:"Param2,omitempty"`
+	w      io.Writer
 }
 
 // CaddyModule returns the Caddy module information.
@@ -32,6 +34,7 @@ func (Middleware) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
 		ID:  "http.handlers.visitor_ip",
 		New: func() caddy.Module { return new(Middleware) },
+		//New: func() caddy.Module { return &Provider{new(cloudflare.Provider)} },
 	}
 }
 
@@ -62,27 +65,30 @@ func (m *Middleware) Provision(ctx caddy.Context) error {
 //		return nil
 //	}
 func (m *Middleware) Validate() error {
-	for k, v := range m.Options {
-		fmt.Printf("Option %s: %v\n", k, v)
-	}
+	//for k, v := range m.Options {
+	//	fmt.Printf("Option %s: %v\n", k, v)
+	//}
 	return nil
 }
 
 // ServeHTTP implements caddyhttp.MiddlewareHandler.
 func (m Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
-	_, _ = m.w.Write([]byte(r.RemoteAddr + "\n"))
 
-	if param1, ok := m.Options["param1"]; ok {
-		fmt.Println("param1:", param1)
-	} else {
-		fmt.Println("param1 not found or not a string")
-	}
+	fmt.Println("visitor_ip middleware loaded")
+	fmt.Println(m.Param1)
+	fmt.Println(m.Param2)
 
-	if param2, ok := m.Options["param2"]; ok {
-		fmt.Println("param2:", param2)
-	} else {
-		fmt.Println("param2 not found or not a string")
-	}
+	//if param1, ok := m.Options["param1"]; ok {
+	//	fmt.Println("param1:", param1)
+	//} else {
+	//	fmt.Println("param1 not found or not a string")
+	//}
+	//
+	//if param2, ok := m.Options["param2"]; ok {
+	//	fmt.Println("param2:", param2)
+	//} else {
+	//	fmt.Println("param2 not found or not a string")
+	//}
 
 	//if param1, ok := m.Options["param1"].([]string); ok {
 	//	fmt.Println("param1:", param1)
@@ -90,43 +96,37 @@ func (m Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddy
 	//	fmt.Println("param1 not found or not a []string")
 	//}
 
-	_, _ = m.w.Write([]byte(r.RemoteAddr + "\n"))
-
 	return next.ServeHTTP(w, r)
 }
 
-// UnmarshalCaddyfile implements caddyfile.Unmarshaler.
-//
-//	func (m *Middleware) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
-//		d.Next() // consume directive name
-//
-//		// require an argument
-//		if !d.NextArg() {
-//			return d.ArgErr()
-//		}
-//
-//		fmt.Println(d.Val())
-//
-//		// store the argument
-//		m.Output = d.Val()
-//		return nil
-//	}
 func (m *Middleware) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
-	m.Options = make(map[string]string)
+
+	d.Next() // consume directive name
 
 	for nesting := d.Nesting(); d.NextBlock(nesting); {
 		switch d.Val() {
 		case "param1":
-			m.Options["param1"] = d.RemainingArgs()[0]
-			d.NextArg()
-		case "param2":
-			d.NextArg()
-			m.Options["param2"] = d.RemainingArgs()[0]
+			if d.NextArg() {
+				m.Param1 = d.Val()
+			} else {
+				return d.ArgErr()
+			}
+		case "zone_token":
+			if d.NextArg() {
+				m.Param2 = d.Val()
+			} else {
+				return d.ArgErr()
+			}
 		default:
 			return d.Errf("unrecognized subdirective '%s'", d.Val())
-
 		}
 	}
+	if d.NextArg() {
+		return d.Errf("unexpected argument '%s'", d.Val())
+	}
+	//if p.Provider.APIToken == "" {
+	//	return d.Err("missing API token")
+	//}
 	return nil
 }
 

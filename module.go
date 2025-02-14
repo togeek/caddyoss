@@ -78,42 +78,17 @@ func (m *Middleware) Validate() error {
 func (m Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
 	_, _ = m.w.Write([]byte(r.RemoteAddr + "\n"))
 
+	if param1, ok := m.Options["param1"].(string); ok {
+		fmt.Println("param1:", param1)
+	} else {
+		fmt.Println("param1 not found or not a string")
+	}
+
 	if param1, ok := m.Options["param1"].([]string); ok {
 		fmt.Println("param1:", param1)
 	} else {
 		fmt.Println("param1 not found or not a []string")
 	}
-
-	if param2, ok := m.Options["param2"].([]string); ok {
-		fmt.Println("param2:", param2)
-	} else {
-		fmt.Println("param2 not found or not a []string")
-	}
-
-	if param21, ok := m.Options["param21"].(string); ok {
-		fmt.Println("param21:", param21)
-	} else {
-		fmt.Println("param21 not found or not a string")
-	}
-
-	if param22, ok := m.Options["param22"].([]string); ok {
-		fmt.Println("param22:", param22)
-	} else {
-		fmt.Println("param22 not found or not a []string")
-	}
-
-	if param23, ok := m.Options["param23"].(string); ok {
-		fmt.Println("param23:", param23)
-	} else {
-		fmt.Println("param23 not found or not a string")
-	}
-
-	if param24, ok := m.Options["param24"].(string); ok {
-		fmt.Println("param24:", param24)
-	} else {
-		fmt.Println("param24 not found or not a string")
-	}
-	fmt.Println("==========================")
 
 	_, _ = m.w.Write([]byte(r.RemoteAddr + "\n"))
 
@@ -144,16 +119,6 @@ func (m *Middleware) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
 		case "param1":
 			fmt.Println("param1")
 			m.Options["param1"] = d.RemainingArgs()
-		case "param2":
-			m.Options["param2"] = d.RemainingArgs()
-		case "param21":
-			m.Options["param21"] = d.RemainingArgs()
-		case "param22":
-			m.Options["param22"] = d.RemainingArgs()
-		case "param23":
-			m.Options["param23"] = d.RemainingArgs()
-		case "param24":
-			m.Options["param24"] = d.Val()
 
 		default:
 			return d.Errf("unrecognized subdirective '%s'", d.Val())

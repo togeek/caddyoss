@@ -84,6 +84,11 @@ func (m Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddy
 	fmt.Println("==========================")
 	fmt.Println(m.Options["param2"])
 
+	fmt.Println(m.Options["param21"])
+	fmt.Println(m.Options["param22"])
+	fmt.Println(m.Options["param23"])
+	fmt.Println(m.Options["param24"])
+
 	_, _ = m.w.Write([]byte(r.RemoteAddr + "\n"))
 
 	return next.ServeHTTP(w, r)
@@ -115,7 +120,12 @@ func (m *Middleware) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
 			m.Options["param1"] = d.RemainingArgs()
 		case "param2":
 			fmt.Println("param2")
-			m.Options["param2"] = d.RemainingArgs()
+			m.Options["param2"] = d.Val()
+
+			m.Options["param21"] = d.NextArg()
+			m.Options["param22"] = d.AllArgs()
+			m.Options["param23"] = d.Line()
+			m.Options["param24"] = d.RemainingArgsRaw()
 		default:
 			return d.Errf("unrecognized subdirective '%s'", d.Val())
 

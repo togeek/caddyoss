@@ -37,22 +37,27 @@ func (Middleware) CaddyModule() caddy.ModuleInfo {
 
 // Provision implements caddy.Provisioner.
 func (m *Middleware) Provision(ctx caddy.Context) error {
-	switch m.Output {
-	case "stdout":
-		m.w = os.Stdout
-	case "stderr":
-		m.w = os.Stderr
-	default:
-		return fmt.Errorf("an output stream is required")
-	}
+	//switch m.Output {
+	//case "stdout":
+	//	m.w = os.Stdout
+	//case "stderr":
+	//	m.w = os.Stderr
+	//default:
+	//	return fmt.Errorf("an output stream is required")
+	//}
+
+	m.w = os.Stdout
+
+	fmt.Println("visitor_ip middleware loaded")
+	fmt.Println(m.Output)
 	return nil
 }
 
 // Validate implements caddy.Validator.
 func (m *Middleware) Validate() error {
-	if m.w == nil {
-		return fmt.Errorf("no writer")
-	}
+	//if m.w == nil {
+	//	return fmt.Errorf("no writer")
+	//}
 	return nil
 }
 
@@ -61,7 +66,7 @@ func (m Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddy
 	_, _ = m.w.Write([]byte(r.RemoteAddr + "\n"))
 
 	//fmt.Println(r.Host)
-	fmt.Println(r.URL)
+	fmt.Println(m.Output)
 
 	_, _ = m.w.Write([]byte(r.RemoteAddr + "\n"))
 

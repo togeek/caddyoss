@@ -1,7 +1,6 @@
 package visitorip
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"log"
@@ -209,41 +208,11 @@ func (m Middleware) paramReplacer(input []byte, groups [][]byte, repl *caddy.Rep
 
 // ServeHTTP implements caddyhttp.MiddlewareHandler.
 func (m Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
-	if !m.compiledPathRegex.MatchString(r.URL.Path) {
-		return next.ServeHTTP(w, r)
-	}
-	csr := NewCappedSizeRecorder(m.MaxSize, w)
-	nextErr := next.ServeHTTP(csr, r)
-	if csr.Overflowed() {
-		return nextErr
-	}
+	m.logger.Info("filter middleware called")
 
-	if m.compiledContentTypeRegex.MatchString(csr.Recorder().Result().Header.Get("Content-Type")) {
-		buf := new(bytes.Buffer)
-		repl := r.Context().Value(caddy.ReplacerCtxKey).(*caddy.Replacer)
-		if _, err := buf.ReadFrom(csr.Recorder().Result().Body); err != nil {
-			return fmt.Errorf("failed to read from response body: %w", err)
-		}
-		replaced := m.compiledSearchRegex.ReplaceAllFunc(buf.Bytes(), func(input []byte) []byte {
-			return m.replacer(input, repl) // forward the replacement processing
-		})
-
-		oldContentLength := csr.Header().Get("Content-Length")
-		if len(oldContentLength) > 0 {
-			csr.Header().Set("Content-Length", strconv.Itoa(len(replaced)))
-		}
-
-		csr.FlushHeaders()
-		if _, err := io.Copy(w, bytes.NewReader(replaced)); err != nil {
-			return fmt.Errorf("error when copying replaced response body: %w", err)
-		}
-	} else {
-		csr.FlushHeaders()
-		if _, err := io.Copy(w, csr.recorder.Body); err != nil {
-			return fmt.Errorf("error when copying response body: %w", err)
-		}
-	}
-	return nextErr
+	m.logger.Info(m.ContentType)
+	m.logger.Info(m.SearchPattern)
+	return next.ServeHTTP(w, r)
 }
 
 // UnmarshalCaddyfile implements caddyfile.Unmarshaler.

@@ -1,6 +1,6 @@
 module github.com/togeek/caddyoss
 
-go 1.23.4
+go 1.24.0
 
 require (
 	github.com/aliyun/aliyun-oss-go-sdk v3.0.2+incompatible

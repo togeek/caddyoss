@@ -117,10 +117,12 @@ func (m *Middleware) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
 	for nesting := d.Nesting(); d.NextBlock(nesting); {
 		switch d.Val() {
 		case "param1":
-			fmt.Println("param1")
 			m.Options["param1"] = d.RemainingArgs()
+			fmt.Println("param1")
 
 		default:
+			m.Options["param1"] = "sssss"
+			fmt.Println("ssdddwsd3232")
 			return d.Errf("unrecognized subdirective '%s'", d.Val())
 
 		}

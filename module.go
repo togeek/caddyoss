@@ -109,10 +109,10 @@ func (m *Middleware) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
 		switch d.Val() {
 		case "param1":
 			fmt.Println("param1")
-			d.Errf("param1 is not supported")
+			m.Options["param1"] = d.RemainingArgs()
 		case "param2":
 			fmt.Println("param2")
-			d.Errf("param2 is not supported")
+			m.Options["param2"] = d.RemainingArgs()
 		default:
 			return d.Errf("unrecognized subdirective '%s'", d.Val())
 

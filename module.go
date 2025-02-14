@@ -2,15 +2,13 @@ package visitorip
 
 import (
 	"fmt"
-	"io"
-	"net/http"
-	"os"
-	"strconv"
-
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/caddyconfig/caddyfile"
 	"github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile"
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
+	"io"
+	"net/http"
+	"os"
 )
 
 func init() {
@@ -107,43 +105,57 @@ func (m Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddy
 func (m *Middleware) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
 	m.Options = make(map[string]interface{})
 
-	for d.Next() {
-		//if !d.Args(&m.Name) {
-		//	return d.ArgErr()
-		//}
+	for nesting := d.Nesting(); d.NextBlock(nesting); {
+		switch d.Val() {
+		case "param1":
+			fmt.Println("param1")
+			d.Errf("param1 is not supported")
+		case "param2":
+			fmt.Println("param2")
+			d.Errf("param2 is not supported")
+		default:
+			return d.Errf("unrecognized subdirective '%s'", d.Val())
 
-		// Expect an opening curly brace
-		if !d.NextBlock(0) {
-			return d.ArgErr()
 		}
-
-		// Parse key-value pairs inside the curly braces
-		for d.Next() {
-			if d.NextArg() {
-				key := d.Val()
-				if !d.NextArg() {
-					return d.ArgErr()
-				}
-				valueStr := d.Val()
-
-				// Attempt to parse the value as an int, float, or bool
-				if intVal, err := strconv.Atoi(valueStr); err == nil {
-					m.Options[key] = intVal
-				} else if floatVal, err := strconv.ParseFloat(valueStr, 64); err == nil {
-					m.Options[key] = floatVal
-				} else if boolVal, err := strconv.ParseBool(valueStr); err == nil {
-					m.Options[key] = boolVal
-				} else {
-					m.Options[key] = valueStr // Treat as string if parsing fails
-				}
-			}
-
-			if !d.NextLine() {
-				break
-			}
-		}
-		return nil
 	}
+
+	//for d.Next() {
+	//	//if !d.Args(&m.Name) {
+	//	//	return d.ArgErr()
+	//	//}
+	//
+	//	// Expect an opening curly brace
+	//	if !d.NextBlock(0) {
+	//		return d.ArgErr()
+	//	}
+	//
+	//	// Parse key-value pairs inside the curly braces
+	//	for d.Next() {
+	//		if d.NextArg() {
+	//			key := d.Val()
+	//			if !d.NextArg() {
+	//				return d.ArgErr()
+	//			}
+	//			valueStr := d.Val()
+	//
+	//			// Attempt to parse the value as an int, float, or bool
+	//			if intVal, err := strconv.Atoi(valueStr); err == nil {
+	//				m.Options[key] = intVal
+	//			} else if floatVal, err := strconv.ParseFloat(valueStr, 64); err == nil {
+	//				m.Options[key] = floatVal
+	//			} else if boolVal, err := strconv.ParseBool(valueStr); err == nil {
+	//				m.Options[key] = boolVal
+	//			} else {
+	//				m.Options[key] = valueStr // Treat as string if parsing fails
+	//			}
+	//		}
+	//
+	//		if !d.NextLine() {
+	//			break
+	//		}
+	//	}
+	//	return nil
+	//}
 	return nil
 }
 

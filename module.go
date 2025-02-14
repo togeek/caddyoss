@@ -13,7 +13,7 @@ import (
 
 func init() {
 	caddy.RegisterModule(Middleware{})
-	//httpcaddyfile.RegisterHandlerDirective("visitor_ip", parseCaddyfile)
+	httpcaddyfile.RegisterHandlerDirective("visitor_ip", parseCaddyfile)
 }
 
 // Middleware implements an HTTP handler that writes the
@@ -22,11 +22,16 @@ type Middleware struct {
 	// The file or stream to write to. Can be "stdout"
 	// or "stderr".
 	//Output string `json:"output,omitempty"`
-	//Options map[string]string `json:"options,omitempty"`
+	Options Options `json:"options,omitempty"`
 
+	//Param1 string `json:"Param1,omitempty"`
+	//Param2 string `json:"Param2,omitempty"`
+	w io.Writer
+}
+
+type Options struct {
 	Param1 string `json:"Param1,omitempty"`
 	Param2 string `json:"Param2,omitempty"`
-	w      io.Writer
 }
 
 // CaddyModule returns the Caddy module information.
@@ -75,8 +80,8 @@ func (m *Middleware) Validate() error {
 func (m Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
 
 	fmt.Println("visitor_ip middleware loaded")
-	fmt.Println(m.Param1)
-	fmt.Println(m.Param2)
+	//fmt.Println(m.Param1)
+	//fmt.Println(m.Param2)
 
 	//if param1, ok := m.Options["param1"]; ok {
 	//	fmt.Println("param1:", param1)
@@ -107,13 +112,13 @@ func (m *Middleware) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
 		switch d.Val() {
 		case "param1":
 			if d.NextArg() {
-				m.Param1 = d.Val()
+				m.Options.Param1 = d.Val()
 			} else {
 				return d.ArgErr()
 			}
 		case "zone_token":
 			if d.NextArg() {
-				m.Param2 = d.Val()
+				m.Options.Param2 = d.Val()
 			} else {
 				return d.ArgErr()
 			}

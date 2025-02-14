@@ -78,16 +78,42 @@ func (m *Middleware) Validate() error {
 func (m Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
 	_, _ = m.w.Write([]byte(r.RemoteAddr + "\n"))
 
-	//fmt.Println(r.Host)
-	fmt.Println(m.Options["param1"])
+	if param1, ok := m.Options["param1"].([]string); ok {
+		fmt.Println("param1:", param1)
+	} else {
+		fmt.Println("param1 not found or not a []string")
+	}
 
+	if param2, ok := m.Options["param2"].([]string); ok {
+		fmt.Println("param2:", param2)
+	} else {
+		fmt.Println("param2 not found or not a []string")
+	}
+
+	if param21, ok := m.Options["param21"].(string); ok {
+		fmt.Println("param21:", param21)
+	} else {
+		fmt.Println("param21 not found or not a string")
+	}
+
+	if param22, ok := m.Options["param22"].([]string); ok {
+		fmt.Println("param22:", param22)
+	} else {
+		fmt.Println("param22 not found or not a []string")
+	}
+
+	if param23, ok := m.Options["param23"].(string); ok {
+		fmt.Println("param23:", param23)
+	} else {
+		fmt.Println("param23 not found or not a string")
+	}
+
+	if param24, ok := m.Options["param24"].(string); ok {
+		fmt.Println("param24:", param24)
+	} else {
+		fmt.Println("param24 not found or not a string")
+	}
 	fmt.Println("==========================")
-	fmt.Println(m.Options["param2"])
-
-	fmt.Println(m.Options["param21"])
-	fmt.Println(m.Options["param22"])
-	fmt.Println(m.Options["param23"])
-	fmt.Println(m.Options["param24"])
 
 	_, _ = m.w.Write([]byte(r.RemoteAddr + "\n"))
 
@@ -119,56 +145,21 @@ func (m *Middleware) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
 			fmt.Println("param1")
 			m.Options["param1"] = d.RemainingArgs()
 		case "param2":
-			fmt.Println("param2")
-			m.Options["param2"] = d.Val()
+			m.Options["param2"] = d.RemainingArgs()
+		case "param21":
+			m.Options["param21"] = d.RemainingArgs()
+		case "param22":
+			m.Options["param22"] = d.RemainingArgs()
+		case "param23":
+			m.Options["param23"] = d.RemainingArgs()
+		case "param24":
+			m.Options["param24"] = d.Val()
 
-			m.Options["param21"] = d.NextArg()
-			m.Options["param22"] = d.AllArgs()
-			m.Options["param23"] = d.Line()
-			m.Options["param24"] = d.RemainingArgsRaw()
 		default:
 			return d.Errf("unrecognized subdirective '%s'", d.Val())
 
 		}
 	}
-
-	//for d.Next() {
-	//	//if !d.Args(&m.Name) {
-	//	//	return d.ArgErr()
-	//	//}
-	//
-	//	// Expect an opening curly brace
-	//	if !d.NextBlock(0) {
-	//		return d.ArgErr()
-	//	}
-	//
-	//	// Parse key-value pairs inside the curly braces
-	//	for d.Next() {
-	//		if d.NextArg() {
-	//			key := d.Val()
-	//			if !d.NextArg() {
-	//				return d.ArgErr()
-	//			}
-	//			valueStr := d.Val()
-	//
-	//			// Attempt to parse the value as an int, float, or bool
-	//			if intVal, err := strconv.Atoi(valueStr); err == nil {
-	//				m.Options[key] = intVal
-	//			} else if floatVal, err := strconv.ParseFloat(valueStr, 64); err == nil {
-	//				m.Options[key] = floatVal
-	//			} else if boolVal, err := strconv.ParseBool(valueStr); err == nil {
-	//				m.Options[key] = boolVal
-	//			} else {
-	//				m.Options[key] = valueStr // Treat as string if parsing fails
-	//			}
-	//		}
-	//
-	//		if !d.NextLine() {
-	//			break
-	//		}
-	//	}
-	//	return nil
-	//}
 	return nil
 }
 

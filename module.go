@@ -2,14 +2,9 @@ package visitorip
 
 import (
 	"fmt"
-	"io"
-	"log"
-	"net/http"
-	"net/http/httptest"
-	"regexp"
-	"strconv"
-
 	"go.uber.org/zap"
+	"net/http"
+	"regexp"
 
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/caddyconfig/caddyfile"
@@ -19,7 +14,7 @@ import (
 
 func init() {
 	caddy.RegisterModule(Middleware{})
-	httpcaddyfile.RegisterHandlerDirective("filter", parseCaddyfile)
+	httpcaddyfile.RegisterHandlerDirective("oss", parseCaddyfile)
 }
 
 var paramReplacementPattern = regexp.MustCompile("\\{[a-zA-Z0-9_\\-.]+?}")
@@ -30,54 +25,38 @@ var paramReplacementPattern = regexp.MustCompile("\\{[a-zA-Z0-9_\\-.]+?}")
 // Github page for instructions.
 type Middleware struct {
 	// Regex to specify which kind of response should we filter
-	ContentType string `json:"content_type"`
-	// Regex to specify which pattern to look up
-	SearchPattern string `json:"search_pattern"`
-	// A byte-array specifying the string used to replace matches
-	Replacement []byte `json:"replacement"`
+	//ContentType string `json:"content_type"`
+	//// Regex to specify which pattern to look up
+	//SearchPattern string `json:"search_pattern"`
+	//// A byte-array specifying the string used to replace matches
+	//Replacement []byte `json:"replacement"`
+	//
+	//MaxSize int    `json:"max_size"`
+	//Path    string `json:"path"`
+	//
+	//compiledContentTypeRegex *regexp.Regexp
+	//compiledSearchRegex      *regexp.Regexp
+	//compiledPathRegex        *regexp.Regexp
 
-	MaxSize int    `json:"max_size"`
-	Path    string `json:"path"`
-
-	compiledContentTypeRegex *regexp.Regexp
-	compiledSearchRegex      *regexp.Regexp
-	compiledPathRegex        *regexp.Regexp
-
+	Param1 string `json:"param1,omitempty"`
+	Param2 string `json:"param2,omitempty"`
 	logger *zap.Logger
 }
 
 // CaddyModule returns the Caddy module information.
 func (Middleware) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
-		ID:  "http.handlers.filter",
+		ID:  "http.handlers.oss",
 		New: func() caddy.Module { return new(Middleware) },
 	}
 }
 
-const DefaultMaxSize = 2 * 1024 * 1024
-
 // Provision implements caddy.Provisioner.
 func (m *Middleware) Provision(ctx caddy.Context) error {
-	var err error
 	m.logger = ctx.Logger(m)
-	m.logger.Debug(fmt.Sprintf("ContentType: %s. SearchPattern: %s",
-		m.ContentType,
-		m.SearchPattern))
-	if m.MaxSize == 0 {
-		m.MaxSize = DefaultMaxSize
-	}
-	if m.Path == "" {
-		m.Path = ".*"
-	}
-	if m.compiledContentTypeRegex, err = regexp.Compile(m.ContentType); err != nil {
-		return fmt.Errorf("invalid content_type: %w", err)
-	}
-	if m.compiledSearchRegex, err = regexp.Compile(m.SearchPattern); err != nil {
-		return fmt.Errorf("invalid search_pattern: %w", err)
-	}
-	if m.compiledPathRegex, err = regexp.Compile(m.Path); err != nil {
-		return fmt.Errorf("invalid path: %w", err)
-	}
+	m.logger.Debug(fmt.Sprintf("Param1: %s. Param2: %s",
+		m.Param1,
+		m.Param2))
 	return nil
 }
 
@@ -86,132 +65,12 @@ func (m *Middleware) Validate() error {
 	return nil
 }
 
-// CappedSizeRecorder is like httptest.ResponseRecorder,
-// but with a cap.
-//
-// When the size of body exceeds cap,
-// CappedSizeRecorder flushes all contents in ResponseRecorder
-// together with all subsequent writes into the ResponseWriter
-type CappedSizeRecorder struct {
-	overflowed bool
-	recorder   *httptest.ResponseRecorder
-	w          http.ResponseWriter
-	cap        int
-}
-
-func NewCappedSizeRecorder(cap int, w http.ResponseWriter) *CappedSizeRecorder {
-	return &CappedSizeRecorder{
-		overflowed: false,
-		recorder:   httptest.NewRecorder(),
-		w:          w,
-		cap:        cap,
-	}
-}
-
-func (csr *CappedSizeRecorder) Overflowed() bool {
-	return csr.overflowed
-}
-
-func (csr *CappedSizeRecorder) Header() http.Header {
-	return csr.recorder.Header()
-}
-
-func (csr *CappedSizeRecorder) FlushHeaders() {
-	for k, vs := range csr.recorder.Header() {
-		for _, v := range vs {
-			csr.w.Header().Add(k, v)
-		}
-	}
-	csr.w.WriteHeader(csr.recorder.Code)
-}
-
-// Flush contents to writer
-func (csr *CappedSizeRecorder) Flush() (int64, error) {
-	if !csr.overflowed {
-		log.Fatal("Flush called when overflowed is false")
-	}
-	csr.FlushHeaders()
-	return io.Copy(csr.w, csr.recorder.Body)
-}
-
-func (csr *CappedSizeRecorder) Recorder() *httptest.ResponseRecorder {
-	if csr.overflowed {
-		log.Fatal("trying to get Recorder when overflowed")
-	}
-	return csr.recorder
-}
-
-func (csr *CappedSizeRecorder) Write(b []byte) (int, error) {
-	if !csr.overflowed && len(b)+csr.recorder.Body.Len() > csr.cap {
-		csr.overflowed = true
-		if written, err := csr.Flush(); err != nil {
-			return int(written), err
-		}
-	}
-	if csr.overflowed {
-		return csr.w.Write(b)
-	} else {
-		return csr.recorder.Write(b)
-	}
-}
-
-func (csr *CappedSizeRecorder) WriteHeader(statusCode int) {
-	if csr.overflowed {
-		log.Fatal("CappedSizeRecorder overflowed on WriteHeader")
-	}
-	csr.recorder.WriteHeader(statusCode)
-}
-
-// Performs the replacement of each placeholder in the previously matched response fragment
-// (matched using SearchRegex).
-func (m Middleware) replacer(input []byte, repl *caddy.Replacer) []byte {
-	pattern := m.compiledSearchRegex
-	if pattern == nil {
-		return input
-	}
-
-	if len(m.Replacement) <= 0 {
-		return []byte{}
-	}
-
-	groups := pattern.FindSubmatch(input)
-	replacement := paramReplacementPattern.ReplaceAllFunc(m.Replacement, func(input2 []byte) []byte {
-		return m.paramReplacer(input2, groups, repl) // forward the placeholder replacement
-	})
-	return replacement
-}
-
-// This method supports two types of placeholders:
-//   - {N} where N matches any capturing group of SearchRegex
-//   - {X} where X is any key available in caddy.Replacer
-func (m Middleware) paramReplacer(input []byte, groups [][]byte, repl *caddy.Replacer) []byte {
-	if len(input) < 3 {
-		return input
-	}
-
-	// replace based on a capturing group
-	name := string(input[1 : len(input)-1])
-	if index, err := strconv.Atoi(name); err == nil {
-		if index >= 0 && index < len(groups) {
-			return groups[index]
-		}
-		return input
-	}
-
-	// replace based on caddy's replacer
-	if value, found := repl.GetString(name); found {
-		return []byte(value)
-	}
-
-	return input
-}
-
 // ServeHTTP implements caddyhttp.MiddlewareHandler.
 func (m Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
 	m.logger.Info("filter middleware called")
 
-	m.logger.Info(m.ContentType)
-	m.logger.Info(m.SearchPattern)
+	m.logger.Info(m.Param1)
+	m.logger.Info(m.Param2)
 	return next.ServeHTTP(w, r)
 }
 
@@ -228,20 +87,11 @@ func (m *Middleware) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
 			return d.ArgErr()
 		}
 		switch key {
-		case "content_type":
-			m.ContentType = value
-		case "search_pattern":
-			m.SearchPattern = value
-		case "replacement":
-			m.Replacement = []byte(value)
-		case "max_size":
-			val, err := strconv.Atoi(value)
-			if err != nil {
-				_ = d.Err(fmt.Sprintf("max_size error: %s", err.Error()))
-			}
-			m.MaxSize = val
-		case "path":
-			m.Path = value
+		case "param1":
+			m.Param1 = value
+		case "param2":
+			m.Param2 = value
+
 		default:
 			return d.Err(fmt.Sprintf("invalid key for filter directive: %s", key))
 		}
